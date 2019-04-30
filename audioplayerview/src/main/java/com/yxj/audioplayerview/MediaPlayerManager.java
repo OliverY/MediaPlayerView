@@ -37,19 +37,6 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     private Audio audio;
     private Uri dataSource;
 
-    private static MediaPlayerManager instance;
-
-    private MediaPlayerManager(){}
-
-    public static MediaPlayerManager getInstance(){
-        if(instance == null){
-            synchronized (MediaPlayerManager.class){
-                instance = new MediaPlayerManager();
-            }
-        }
-        return instance;
-    }
-
     private void initIfNecessary() {
         if (null == mPlayer) {
             mPlayer = new MediaPlayer();
@@ -79,12 +66,15 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     public void start() {
         // release()会释放player、将player置空，所以这里需要判断一下
         if (null != mPlayer && hasPrepared) {
+            // 开启定时器
+            startScheduler();
             mPlayer.start();
         }
     }
 
     public void pause() {
         if (null != mPlayer && hasPrepared) {
+            stopScheduler();
             mPlayer.pause();
             storeCurrentPosition(audio);
         }
@@ -132,15 +122,13 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         }
 
         innerSeekTo(audio.currentPosition);
-        start();
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if(getDurationListener != null)
+                if(getDurationListener != null) {
                     getDurationListener.onDurationListener(getDuration());
-
-                timer = new Timer();
-                timer.schedule(new TimeAndProgressTask(),0,300);
+                }
+                start();
             }
         });
     }
@@ -151,8 +139,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         audio.currentPosition = 0;
         storeCurrentPosition(audio);
 
-        if(timer!=null)
-            timer.cancel();
+        stopScheduler();
         // 通知调用处，调用play()方法进行下一个曲目的播放
         if(mediaPlayerStatusListener!=null)
             mediaPlayerStatusListener.onCompleteListener();
@@ -162,8 +149,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     public boolean onError(MediaPlayer mp, int what, int extra) {
         Log.e("error","error:what"+what+" extra:"+extra);
         hasPrepared = false;
-        if(timer!=null)
-            timer.cancel();
+        stopScheduler();
         return false;
     }
 
@@ -191,11 +177,11 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         @Override
         public void run(){
             if(hasPrepared){
-                final int seconds = getCurrentPosition();
-                Log.e("yxj","getCurrentPosition:"+seconds);
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
+                        int seconds = getCurrentPosition();
+                        Log.e("yxj","getCurrentPosition:"+seconds);
                         timeProgressListener.onTimeProgressListener(seconds);
                     }
                 });
@@ -242,6 +228,17 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
             audio.currentPosition = 0;
         }
         urlCurrentPositionMap.put(dataSource,audio);
+    }
+
+    private void startScheduler(){
+        timer = new Timer();
+        timer.schedule(new TimeAndProgressTask(),0,300);
+    }
+
+    private void stopScheduler(){
+        if(timer!=null){
+            timer.cancel();
+        }
     }
 
     class Audio{

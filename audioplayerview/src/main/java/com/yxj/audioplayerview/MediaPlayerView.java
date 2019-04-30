@@ -57,7 +57,7 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
         tvDuration = rootView.findViewById(R.id.tv_duration);
         progressBar = rootView.findViewById(R.id.seek_bar);
 
-        mediaPlayerManager = MediaPlayerManager.getInstance();
+        mediaPlayerManager = new MediaPlayerManager();
 
         mediaPlayerManager.setTimeProgressListener(this);
         mediaPlayerManager.setGetDurationListener(this);
@@ -66,6 +66,7 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
 
         btnPlay.setOnClickListener(this);
         progressBar.setOnSeekBarChangeListener(this);
+        setProgressBarEnable(false);
 
         setBtnPlayDisplay(true);
     }
@@ -108,6 +109,7 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
          */
         if(isPaused){
             isPaused = false;
+            setProgressBarEnable(true);
             setBtnPlayDisplay(isPaused);
             if(mediaPlayerManager.isComplete()){
                 mediaPlayerManager.play(getContext(),dataUri);
@@ -115,6 +117,7 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
                 mediaPlayerManager.start();
             }
         }else{
+            setProgressBarEnable(false);
             isPaused = true;
             setBtnPlayDisplay(isPaused);
             mediaPlayerManager.pause();
@@ -145,7 +148,7 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
         setBtnPlayDisplay(true);
         isPaused = true;
         tvCurrent.setText("00:00");
-
+        setProgressBarEnable(false);
         progressBar.setProgress(0);
     }
 
@@ -154,7 +157,8 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
         setBtnPlayDisplay(true);
         isPaused = true;
         tvCurrent.setText("00:00");
-
+        setProgressBarEnable(false);
+        progressBar.setSecondaryProgress(0);
         progressBar.setProgress(0);
     }
 
@@ -172,5 +176,8 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
         mediaPlayerManager.release();
     }
 
+    private void setProgressBarEnable(boolean enable){
+        progressBar.setEnabled(enable);
+    }
 
 }

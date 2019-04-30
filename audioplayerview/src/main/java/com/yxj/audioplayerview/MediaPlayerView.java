@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -59,7 +58,7 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
         tvDuration = rootView.findViewById(R.id.tv_duration);
         progressBar = rootView.findViewById(R.id.seek_bar);
 
-        mediaPlayerManager = new MediaPlayerManager();
+        mediaPlayerManager = MediaPlayerManager.getInstance();
 
         mediaPlayerManager.setTimeProgressListener(this);
         mediaPlayerManager.setGetDurationListener(this);

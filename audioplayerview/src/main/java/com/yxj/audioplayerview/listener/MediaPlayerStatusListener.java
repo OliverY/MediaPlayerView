@@ -8,7 +8,13 @@ package com.yxj.audioplayerview.listener;
  */
 public interface MediaPlayerStatusListener {
 
+    /**
+     * 音频播放结束监听
+     */
     void onCompleteListener();
 
+    /**
+     * MediaPlayer.release()添加的监听
+     */
     void onReleaseListener();
 }

@@ -7,6 +7,9 @@ package com.yxj.audioplayerview.listener;
  * Description:
  */
 public interface TimeProgressListener {
-
+    /**
+     * 时间过程监听
+     * @param seconds
+     */
     void onTimeProgressListener(int seconds);
 }

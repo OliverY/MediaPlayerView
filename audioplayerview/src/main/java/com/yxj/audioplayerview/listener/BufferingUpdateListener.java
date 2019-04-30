@@ -8,5 +8,9 @@ package com.yxj.audioplayerview.listener;
  */
 public interface BufferingUpdateListener {
 
+    /**
+     * 缓冲数据监听
+     * @param percent
+     */
     void onBufferingUpdate(int percent);
 }

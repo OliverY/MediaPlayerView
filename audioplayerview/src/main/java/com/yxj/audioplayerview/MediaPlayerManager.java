@@ -37,6 +37,19 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     private Audio audio;
     private Uri dataSource;
 
+    private static MediaPlayerManager instance;
+
+    private MediaPlayerManager(){}
+
+    public static MediaPlayerManager getInstance(){
+        if(instance == null){
+            synchronized (MediaPlayerManager.class){
+                instance = new MediaPlayerManager();
+            }
+        }
+        return instance;
+    }
+
     private void initIfNecessary() {
         if (null == mPlayer) {
             mPlayer = new MediaPlayer();
@@ -203,6 +216,10 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         this.mediaPlayerStatusListener = mediaPlayerStatusListener;
     }
 
+    /**
+     * 进度监听
+     * @param timeProgressListener
+     */
     public void setTimeProgressListener(TimeProgressListener timeProgressListener){
         this.timeProgressListener = timeProgressListener;
     }

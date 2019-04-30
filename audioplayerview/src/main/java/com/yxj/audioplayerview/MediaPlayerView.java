@@ -17,6 +17,8 @@ import com.yxj.audioplayerview.listener.GetDurationListener;
 import com.yxj.audioplayerview.listener.MediaPlayerStatusListener;
 import com.yxj.audioplayerview.listener.TimeProgressListener;
 
+import org.greenrobot.eventbus.EventBus;
+
 /**
  * Author:  Yxj
  * Time:    2019/4/25 上午10:57
@@ -74,7 +76,6 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-
         mediaPlayerManager.release();
     }
 
@@ -112,6 +113,14 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
             setProgressBarEnable(true);
             setBtnPlayDisplay(isPaused);
             if(mediaPlayerManager.isComplete()){
+                try {
+                    String positionString = (String) getTag();
+                    int position = Integer.parseInt(positionString);
+                    EventBus.getDefault().post(new Events(position));
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+
                 mediaPlayerManager.play(getContext(),dataUri);
             }else{
                 mediaPlayerManager.start();
@@ -179,5 +188,7 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
     private void setProgressBarEnable(boolean enable){
         progressBar.setEnabled(enable);
     }
+
+
 
 }

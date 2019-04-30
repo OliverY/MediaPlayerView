@@ -12,6 +12,8 @@ import com.yxj.audioplayerview.listener.GetDurationListener;
 import com.yxj.audioplayerview.listener.MediaPlayerStatusListener;
 import com.yxj.audioplayerview.listener.TimeProgressListener;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -147,7 +149,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
 
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
-        Log.e("error","error:what"+what+" extra:"+extra);
+//        Log.e("error","error:what"+what+" extra:"+extra);
         hasPrepared = false;
         stopScheduler();
         return false;
@@ -181,7 +183,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
                     @Override
                     public void run() {
                         int seconds = getCurrentPosition();
-                        Log.e("yxj","getCurrentPosition:"+seconds);
+//                        Log.e("yxj","getCurrentPosition:"+seconds);
                         timeProgressListener.onTimeProgressListener(seconds);
                     }
                 });
@@ -223,11 +225,13 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     }
 
     private void storeCurrentPosition(Audio audio){
-        audio.currentPosition = getCurrentPosition();
-        if(audio.currentPosition == audio.duration){
-            audio.currentPosition = 0;
+        if(audio != null){
+            audio.currentPosition = getCurrentPosition();
+            if(audio.currentPosition == audio.duration){
+                audio.currentPosition = 0;
+            }
+            urlCurrentPositionMap.put(dataSource,audio);
         }
-        urlCurrentPositionMap.put(dataSource,audio);
     }
 
     private void startScheduler(){

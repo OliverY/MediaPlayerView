@@ -45,7 +45,8 @@ public class VedioAdapter extends BaseMultiItemQuickAdapter<MultiItemEntity,Base
     private void renderAudio(BaseViewHolder helper, AudioBean item) {
         MediaPlayerView mediaPlayerView = helper.getView(R.id.audio_view);
         mediaPlayerView.setDataUri(item.getUrl());
-
+        mediaPlayerView.setTag(String.valueOf(helper.getLayoutPosition()));
+        mediaPlayerView.release();
     }
 
 }

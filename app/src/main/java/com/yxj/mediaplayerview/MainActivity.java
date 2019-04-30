@@ -79,4 +79,12 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if(adapter != null){
+            adapter.notifyItemChanged(lastPosition);
+        }
+    }
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
+import android.util.ArrayMap;
 import android.util.Log;
 
 import com.yxj.audioplayerview.listener.BufferingUpdateListener;
@@ -23,6 +24,8 @@ import java.util.TimerTask;
  */
 public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener,MediaPlayer.OnBufferingUpdateListener {
 
+    public static ArrayMap<Uri,Audio> urlCurrentPositionMap = new ArrayMap<>();
+
     private MediaPlayer mPlayer;
     private boolean hasPrepared;
     private Handler handler;
@@ -31,6 +34,8 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     private MediaPlayerStatusListener mediaPlayerStatusListener;
     private BufferingUpdateListener bufferingUpdateListener;
     private Timer timer;
+    private Audio audio;
+    private Uri dataSource;
 
     private void initIfNecessary() {
         if (null == mPlayer) {
@@ -43,6 +48,8 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     }
 
     public void play(Context context, Uri dataSource) {
+        this.dataSource = dataSource;
+
         hasPrepared = false; // 开始播放前讲Flag置为不可操作
         initIfNecessary(); // 如果是第一次播放/player已经释放了，就会重新创建、初始化
         handler = new Handler();
@@ -66,16 +73,23 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     public void pause() {
         if (null != mPlayer && hasPrepared) {
             mPlayer.pause();
+            storeCurrentPosition(audio);
         }
     }
 
     /**
      * 设置百分比
-     * @param position
+     * @param percent
      */
-    public void seekTo(int position) {
+    public void seekTo(int percent) {
         if (null != mPlayer && hasPrepared) {
-            mPlayer.seekTo((int) ((position*1.0f/100) *getDuration()*1000));
+            mPlayer.seekTo((int) ((percent*1.0f/100) *getDuration()*1000));
+        }
+    }
+
+    public void innerSeekTo(int seconds){
+        if (null != mPlayer && hasPrepared) {
+            mPlayer.seekTo(seconds*1000);
         }
     }
 
@@ -84,6 +98,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
             mediaPlayerStatusListener.onReleaseListener();
         hasPrepared = false;
         if(mPlayer!=null){
+            storeCurrentPosition(audio);
 //            mPlayer.stop();  这里不能调用stop，否则在perpare过程中，调用stop会报错
             mPlayer.release();
             mPlayer = null;
@@ -94,8 +109,16 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
 
     @Override
     public void onPrepared(MediaPlayer mp) {
-        Log.e("yxj","onPrepared---->");
         hasPrepared = true; // 准备完成后回调到这里
+
+        if(urlCurrentPositionMap.get(dataSource)!=null){
+            audio = urlCurrentPositionMap.get(dataSource);
+        }else{
+            audio = new Audio(0,getDuration());
+            storeCurrentPosition(audio);
+        }
+
+        innerSeekTo(audio.currentPosition);
         start();
         handler.post(new Runnable() {
             @Override
@@ -112,6 +135,9 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     @Override
     public void onCompletion(MediaPlayer mp) {
         hasPrepared = false;
+        audio.currentPosition = 0;
+        storeCurrentPosition(audio);
+
         if(timer!=null)
             timer.cancel();
         // 通知调用处，调用play()方法进行下一个曲目的播放
@@ -135,12 +161,16 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
             bufferingUpdateListener.onBufferingUpdate(percent);
     }
 
+    /**
+     * 秒
+     * @return
+     */
     private int getDuration(){
         return mPlayer.getDuration()/1000;
     }
 
     private int getCurrentPosition(){
-        return mPlayer.getCurrentPosition()/1000;
+        return mPlayer.getCurrentPosition()/1000+1;
     }
 
     class TimeAndProgressTask extends TimerTask {
@@ -149,6 +179,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         public void run(){
             if(hasPrepared){
                 final int seconds = getCurrentPosition();
+                Log.e("yxj","getCurrentPosition:"+seconds);
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -186,5 +217,23 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
      */
     public void setBufferingUpdateListener(BufferingUpdateListener bufferingUpdateListener) {
         this.bufferingUpdateListener = bufferingUpdateListener;
+    }
+
+    private void storeCurrentPosition(Audio audio){
+        audio.currentPosition = getCurrentPosition();
+        if(audio.currentPosition == audio.duration){
+            audio.currentPosition = 0;
+        }
+        urlCurrentPositionMap.put(dataSource,audio);
+    }
+
+    class Audio{
+        int currentPosition;
+        int duration;
+
+        public Audio(int currentPosition, int duration) {
+            this.currentPosition = currentPosition;
+            this.duration = duration;
+        }
     }
 }

@@ -7,11 +7,9 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <com.yxj.audioplayerview.MediaPlayerView
-        android:id="@+id/media_player_view"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-
+        android:layout_height="match_parent"/>
 
 </LinearLayout>

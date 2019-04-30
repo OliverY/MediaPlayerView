@@ -33,7 +33,6 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
     private Uri dataUri;
     private int duration;
     private boolean isUserDragSeekBar;
-    private int initialPosition;
 
     // 代表现在是否正在播放，播放完毕，release
     private boolean isPaused = true;
@@ -76,11 +75,6 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
         super.onDetachedFromWindow();
 
         mediaPlayerManager.release();
-    }
-
-    public void setInitialPosition(int initialPosition) {
-        this.initialPosition = initialPosition;
-        progressBar.setProgress(initialPosition);
     }
 
     public void setDataUri(String url){

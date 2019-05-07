@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mediaPlayerView = findViewById(R.id.media_player_view);
-        mediaPlayerView.setDataUri("http://zhangmenshiting.qianqian.com/data2/music/39c28e2e7761d344a256e4e215b61c62/599521867/599521867.m4a?xcode=6ad4574be976cb39c9bf3d409e407d1c");
+        mediaPlayerView.setDataUri("https://yuantu-hz-img.oss-cn-hangzhou.aliyuncs.com/d16c7785a3d03c1f30b4dd3d51e9377b.mp3");
 
     }
 

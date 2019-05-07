@@ -10,7 +10,7 @@ import java.lang.ref.WeakReference;
  * Author:  Yxj
  * Time:    2019/5/7 上午10:48
  * -----------------------------------------
- * Description:
+ * Description: 事件中心，本质上是一个一个监听View的集合，所以用弱引用
  */
 class MediaEventCenter {
 
@@ -91,6 +91,10 @@ class MediaEventCenter {
                 listener.onReleaseListener();
             }
         }
+    }
+
+    public void destroy(){
+        listenerArray = null;
     }
 
 }

@@ -7,6 +7,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
 import com.chad.library.adapter.base.entity.MultiItemEntity;
+import com.yxj.audioplayerview.MediaPlayerManager;
 import com.yxj.mediaplayerview.adapter.VedioAdapter;
 import com.yxj.mediaplayerview.bean.AudioBean;
 import com.yxj.mediaplayerview.bean.TextBean;
@@ -58,28 +59,10 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
-//    int lastPosition;
-
-//    @Subscribe
-//    public void notifyLastItem(Events events){
-//        Log.e("yxj","last:"+lastPosition+" current:"+events.position);
-//        if(lastPosition != events.position){
-//            adapter.notifyItemChanged(lastPosition);
-//            lastPosition = events.position;
-//        }
-//    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        EventBus.getDefault().unregister(this);
+        MediaPlayerManager.getInstance().destroy();
     }
 
-//    @Override
-//    public void onPause() {
-//        super.onPause();
-//        if(adapter != null){
-//            adapter.notifyItemChanged(lastPosition);
-//        }
-//    }
 }

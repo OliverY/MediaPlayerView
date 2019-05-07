@@ -20,7 +20,7 @@ import java.util.TimerTask;
  */
 public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener,MediaPlayer.OnBufferingUpdateListener {
 
-    public static ArrayMap<Uri,Audio> urlCurrentPositionMap = new ArrayMap<>();
+    private static ArrayMap<Uri,Audio> urlCurrentPositionMap = new ArrayMap<>();
 
     private MediaPlayer mPlayer;
     private boolean hasPrepared;
@@ -270,5 +270,14 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
 
     public Uri getDataSource() {
         return dataSource;
+    }
+
+    /**
+     * 销毁
+     */
+    public void destroy(){
+        releasePlayer();
+        MediaEventCenter.getInstance().destroy();
+        mInstance = null;
     }
 }

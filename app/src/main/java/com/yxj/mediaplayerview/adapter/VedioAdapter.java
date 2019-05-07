@@ -1,5 +1,7 @@
 package com.yxj.mediaplayerview.adapter;
 
+import android.view.View;
+
 import com.chad.library.adapter.base.BaseMultiItemQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.chad.library.adapter.base.entity.MultiItemEntity;
@@ -43,10 +45,8 @@ public class VedioAdapter extends BaseMultiItemQuickAdapter<MultiItemEntity,Base
     }
 
     private void renderAudio(BaseViewHolder helper, AudioBean item) {
-        MediaPlayerView mediaPlayerView = helper.getView(R.id.audio_view);
+        final MediaPlayerView mediaPlayerView = helper.getView(R.id.audio_view);
         mediaPlayerView.setDataUri(item.getUrl());
-        mediaPlayerView.setTag(String.valueOf(helper.getLayoutPosition()));
-        mediaPlayerView.release();
     }
 
 }

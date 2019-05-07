@@ -12,12 +12,8 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.yxj.audioplayerview.listener.BufferingUpdateListener;
-import com.yxj.audioplayerview.listener.GetDurationListener;
-import com.yxj.audioplayerview.listener.MediaPlayerStatusListener;
-import com.yxj.audioplayerview.listener.TimeProgressListener;
+import com.yxj.audioplayerview.listener.Listener;
 
-import org.greenrobot.eventbus.EventBus;
 
 /**
  * Author:  Yxj
@@ -25,7 +21,7 @@ import org.greenrobot.eventbus.EventBus;
  * -----------------------------------------
  * Description: 这个view可以修改或者自定义一个自己的view
  */
-public class MediaPlayerView extends FrameLayout implements TimeProgressListener,GetDurationListener,View.OnClickListener, SeekBar.OnSeekBarChangeListener, MediaPlayerStatusListener, BufferingUpdateListener {
+public class MediaPlayerView extends FrameLayout implements View.OnClickListener, SeekBar.OnSeekBarChangeListener,Listener {
 
     private ImageView btnPlay;
     private TextView tvCurrent;
@@ -59,24 +55,13 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
         tvDuration = rootView.findViewById(R.id.tv_duration);
         progressBar = rootView.findViewById(R.id.seek_bar);
 
-        mediaPlayerManager = new MediaPlayerManager();
-
-        mediaPlayerManager.setTimeProgressListener(this);
-        mediaPlayerManager.setGetDurationListener(this);
-        mediaPlayerManager.setMediaPlayerStatusListener(this);
-        mediaPlayerManager.setBufferingUpdateListener(this);
+        mediaPlayerManager = MediaPlayerManager.getInstance();
 
         btnPlay.setOnClickListener(this);
         progressBar.setOnSeekBarChangeListener(this);
         setProgressBarEnable(false);
 
         setBtnPlayDisplay(true);
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        mediaPlayerManager.release();
     }
 
     public void setDataUri(String url){
@@ -110,25 +95,18 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
          */
         if(isPaused){
             isPaused = false;
-            setProgressBarEnable(true);
-            setBtnPlayDisplay(isPaused);
-            if(mediaPlayerManager.isComplete()){
-                try {
-                    String positionString = (String) getTag();
-                    int position = Integer.parseInt(positionString);
-                    EventBus.getDefault().post(new Events(position));
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                }
-
+            if(mediaPlayerManager.isComplete(dataUri)){
+                mediaPlayerManager.releaseLastPlayer(dataUri);
                 mediaPlayerManager.play(getContext(),dataUri);
             }else{
                 mediaPlayerManager.start();
             }
+            setBtnPlayDisplay(false);
+            setProgressBarEnable(true);
         }else{
             setProgressBarEnable(false);
             isPaused = true;
-            setBtnPlayDisplay(isPaused);
+            setBtnPlayDisplay(true);
             mediaPlayerManager.pause();
         }
 
@@ -181,14 +159,34 @@ public class MediaPlayerView extends FrameLayout implements TimeProgressListener
         btnPlay.setImageResource(isPaused?R.mipmap.icon_play_normal:R.mipmap.icon_pause_normal);
     }
 
-    public void release(){
-        mediaPlayerManager.release();
+    public void initUI(){
+        setBtnPlayDisplay(true);
+        isPaused = true;
+        tvCurrent.setText("00:00");
+        setProgressBarEnable(false);
+        progressBar.setSecondaryProgress(0);
+        progressBar.setProgress(0);
     }
 
     private void setProgressBarEnable(boolean enable){
         progressBar.setEnabled(enable);
     }
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        mediaPlayerManager.setListener(dataUri,this);
+        initUI();
+    }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        mediaPlayerManager.removeListener(dataUri);
+        // 当前控件正在播放，需要release
+        if(mediaPlayerManager.getDataSource() == dataUri){
+            mediaPlayerManager.releasePlayer();
+        }
+    }
 
 }

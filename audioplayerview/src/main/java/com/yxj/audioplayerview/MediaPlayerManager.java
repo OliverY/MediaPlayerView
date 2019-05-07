@@ -5,14 +5,8 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.ArrayMap;
-import android.util.Log;
 
-import com.yxj.audioplayerview.listener.BufferingUpdateListener;
-import com.yxj.audioplayerview.listener.GetDurationListener;
-import com.yxj.audioplayerview.listener.MediaPlayerStatusListener;
-import com.yxj.audioplayerview.listener.TimeProgressListener;
-
-import org.greenrobot.eventbus.EventBus;
+import com.yxj.audioplayerview.listener.Listener;
 
 import java.io.IOException;
 import java.util.Timer;
@@ -31,13 +25,23 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     private MediaPlayer mPlayer;
     private boolean hasPrepared;
     private Handler handler;
-    private TimeProgressListener timeProgressListener;
-    private GetDurationListener getDurationListener;
-    private MediaPlayerStatusListener mediaPlayerStatusListener;
-    private BufferingUpdateListener bufferingUpdateListener;
     private Timer timer;
     private Audio audio;
+    private Uri lastSource;
     private Uri dataSource;
+
+    private static MediaPlayerManager mInstance;
+    private MediaPlayerManager(){
+    }
+
+    public static MediaPlayerManager getInstance(){
+        if(mInstance == null){
+            synchronized (MediaPlayerManager.class){
+                mInstance = new MediaPlayerManager();
+            }
+        }
+        return mInstance;
+    }
 
     private void initIfNecessary() {
         if (null == mPlayer) {
@@ -50,7 +54,15 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     }
 
     public void play(Context context, Uri dataSource) {
+        // 停止上一个
+        if(lastSource != null){
+            // 上一个和自己
+            if(lastSource != dataSource){
+                MediaEventCenter.getInstance().sendReleaseEvent(getHash(lastSource));
+            }
+        }
         this.dataSource = dataSource;
+        lastSource = dataSource;
 
         hasPrepared = false; // 开始播放前讲Flag置为不可操作
         initIfNecessary(); // 如果是第一次播放/player已经释放了，就会重新创建、初始化
@@ -92,19 +104,32 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         }
     }
 
-    public void innerSeekTo(int seconds){
+    private void innerSeekTo(int seconds){
         if (null != mPlayer && hasPrepared) {
             mPlayer.seekTo(seconds*1000);
         }
     }
 
-    public void release() {
-        if(mediaPlayerStatusListener!=null)
-            mediaPlayerStatusListener.onReleaseListener();
+    /**
+     * 释放 上一个播放的
+     * view 开始播放时
+     *
+     */
+    public void releaseLastPlayer(Uri currentDataSource) {
+        // 如果当前播放不是上一个，则release掉
+        if(getHash(currentDataSource) != getHash(lastSource)){
+            MediaEventCenter.getInstance().sendReleaseEvent(getHash(lastSource));
+        }
+        releasePlayer();
+    }
+
+    /**
+     * 仅 释放player，不用关心是释放哪个
+     */
+    public void releasePlayer(){
         hasPrepared = false;
         if(mPlayer!=null){
             storeCurrentPosition(audio);
-//            mPlayer.stop();  这里不能调用stop，否则在perpare过程中，调用stop会报错
             mPlayer.release();
             mPlayer = null;
         }
@@ -127,9 +152,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if(getDurationListener != null) {
-                    getDurationListener.onDurationListener(getDuration());
-                }
+                MediaEventCenter.getInstance().sendDurationUpdateEvent(getHash(dataSource),getDuration());
                 start();
             }
         });
@@ -143,8 +166,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
 
         stopScheduler();
         // 通知调用处，调用play()方法进行下一个曲目的播放
-        if(mediaPlayerStatusListener!=null)
-            mediaPlayerStatusListener.onCompleteListener();
+        MediaEventCenter.getInstance().sendonCompleteEvent(getHash(dataSource));
     }
 
     @Override
@@ -158,8 +180,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     // 缓存进度
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
-        if(bufferingUpdateListener!=null)
-            bufferingUpdateListener.onBufferingUpdate(percent);
+        MediaEventCenter.getInstance().sendBufferingUpdateEvent(getHash(dataSource),percent);
     }
 
     /**
@@ -183,45 +204,30 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
                     @Override
                     public void run() {
                         int seconds = getCurrentPosition();
-//                        Log.e("yxj","getCurrentPosition:"+seconds);
-                        timeProgressListener.onTimeProgressListener(seconds);
+                        MediaEventCenter.getInstance().sendTimeProgressEvent(getHash(dataSource),seconds);
                     }
                 });
             }
         }
     }
 
-    public boolean isComplete(){
+    public boolean isComplete(Uri uri){
+        if(getHash(uri) != getHash(lastSource)){
+            return true;
+        }
         return !hasPrepared;
     }
 
     /**
-     * 播放状态监听
-     * 监听播放完成状态、release状态
-     * @param mediaPlayerStatusListener
-     */
-    public void setMediaPlayerStatusListener(MediaPlayerStatusListener mediaPlayerStatusListener) {
-        this.mediaPlayerStatusListener = mediaPlayerStatusListener;
-    }
-
-    /**
-     * 进度监听
-     * @param timeProgressListener
-     */
-    public void setTimeProgressListener(TimeProgressListener timeProgressListener){
-        this.timeProgressListener = timeProgressListener;
-    }
-
-    public void setGetDurationListener(GetDurationListener getDurationListener) {
-        this.getDurationListener = getDurationListener;
-    }
-
-    /**
      * 设置缓冲条监听
-     * @param bufferingUpdateListener
+     * @param listener
      */
-    public void setBufferingUpdateListener(BufferingUpdateListener bufferingUpdateListener) {
-        this.bufferingUpdateListener = bufferingUpdateListener;
+    public void setListener(Uri uri,Listener listener) {
+        MediaEventCenter.getInstance().addListener(uri.hashCode(),listener);
+    }
+
+    public void removeListener(Uri uri){
+        MediaEventCenter.getInstance().removeListener(uri.hashCode());
     }
 
     private void storeCurrentPosition(Audio audio){
@@ -253,5 +259,16 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
             this.currentPosition = currentPosition;
             this.duration = duration;
         }
+    }
+
+    private int getHash(Object object){
+        if(object == null){
+            return -1;
+        }
+        return object.hashCode();
+    }
+
+    public Uri getDataSource() {
+        return dataSource;
     }
 }

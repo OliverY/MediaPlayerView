@@ -5,14 +5,8 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.View;
-import android.widget.SeekBar;
-import android.widget.TextView;
 
 import com.chad.library.adapter.base.entity.MultiItemEntity;
-import com.yxj.audioplayerview.Events;
-import com.yxj.audioplayerview.MediaPlayerManager;
-import com.yxj.audioplayerview.MediaPlayerView;
 import com.yxj.mediaplayerview.adapter.VedioAdapter;
 import com.yxj.mediaplayerview.bean.AudioBean;
 import com.yxj.mediaplayerview.bean.TextBean;
@@ -32,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        EventBus.getDefault().register(this);
+//        EventBus.getDefault().register(this);
 
         makeList();
     }
@@ -53,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
         vedioList.add(new TextBean("6"));
         vedioList.add(new TextBean("7"));
         vedioList.add(new AudioBean("http://cdnringbd.shoujiduoduo.com/ringres/userv1/a48/534/72106534.aac"));
+        vedioList.add(new AudioBean("http://isure.stream.qqmusic.qq.com/R400002lny3r1zoNO8.m4a?guid=2474607544&vkey=F7ED1808F7AF28869CC428DB90429D36FD2E1D2DB91985D86BF1E878560C18AA13666804F685D0824CAAF65984C815D9543501430D30E621&uin=0&fromtag=66"));
         vedioList.add(new TextBean("8"));
         vedioList.add(new TextBean("9"));
         vedioList.add(new TextBean("10"));
@@ -63,28 +58,28 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
-    int lastPosition;
+//    int lastPosition;
 
-    @Subscribe
-    public void notifyLastItem(Events events){
-        Log.e("yxj","last:"+lastPosition+" current:"+events.position);
-        if(lastPosition != events.position){
-            adapter.notifyItemChanged(lastPosition);
-            lastPosition = events.position;
-        }
-    }
+//    @Subscribe
+//    public void notifyLastItem(Events events){
+//        Log.e("yxj","last:"+lastPosition+" current:"+events.position);
+//        if(lastPosition != events.position){
+//            adapter.notifyItemChanged(lastPosition);
+//            lastPosition = events.position;
+//        }
+//    }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        EventBus.getDefault().unregister(this);
+//        EventBus.getDefault().unregister(this);
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if(adapter != null){
-            adapter.notifyItemChanged(lastPosition);
-        }
-    }
+//    @Override
+//    public void onPause() {
+//        super.onPause();
+//        if(adapter != null){
+//            adapter.notifyItemChanged(lastPosition);
+//        }
+//    }
 }

@@ -93,6 +93,16 @@ class MediaListenerCenter {
         }
     }
 
+    public void sendPreparedEvent(int uriHash){
+        WeakReference<Listener> weakReference = listenerArray.get(uriHash);
+        if(weakReference!=null){
+            Listener listener = weakReference.get();
+            if(listener!=null){
+                listener.onPreparedListener();
+            }
+        }
+    }
+
     public void destroy(){
 //        listenerArray = null;
     }

@@ -29,8 +29,6 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     private Audio audio;
 
     private int lastHash;
-//    private int currentHash;
-//    private Uri lastSource;
     private Uri dataSource;
 
     private static MediaPlayerManager mInstance;
@@ -66,7 +64,6 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         }
         this.dataSource = dataSource;
         lastHash = currentHash;
-//        lastSource = dataSource;
 
         hasPrepared = false; // 开始播放前讲Flag置为不可操作
         initIfNecessary(); // 如果是第一次播放/player已经释放了，就会重新创建、初始化
@@ -149,6 +146,8 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     @Override
     public void onPrepared(MediaPlayer mp) {
         hasPrepared = true; // 准备完成后回调到这里
+
+        MediaListenerCenter.getInstance().sendPreparedEvent(lastHash);
 
         if(urlCurrentPositionMap.get(lastHash)!=null){
             audio = urlCurrentPositionMap.get(lastHash);

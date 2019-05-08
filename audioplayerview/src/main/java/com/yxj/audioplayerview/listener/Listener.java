@@ -35,4 +35,9 @@ public interface Listener {
      * @param seconds
      */
     void onTimeProgressListener(int seconds);
+
+    /**
+     * 准备完成，立即可以播放了
+     */
+    void onPreparedListener();
 }

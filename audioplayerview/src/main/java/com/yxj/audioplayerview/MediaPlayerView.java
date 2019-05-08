@@ -13,6 +13,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.yxj.audioplayerview.listener.Listener;
+import com.yxj.audioplayerview.util.AnimationUtils;
 import com.yxj.audioplayerview.util.KeyUtils;
 
 
@@ -25,6 +26,7 @@ import com.yxj.audioplayerview.util.KeyUtils;
 public class MediaPlayerView extends FrameLayout implements View.OnClickListener, SeekBar.OnSeekBarChangeListener,Listener {
 
     private ImageView btnPlay;
+    private ImageView imgLoading;
     private TextView tvCurrent;
     private TextView tvDuration;
     private SeekBar progressBar;
@@ -32,6 +34,7 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
     private Uri dataUri;
     private int duration;
     private boolean isUserDragSeekBar;
+    private AnimationUtils animationUtils;
 
     // 代表现在是否正在播放，播放完毕，release
     private boolean isPaused = true;
@@ -55,6 +58,7 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
         tvCurrent = rootView.findViewById(R.id.tv_current);
         tvDuration = rootView.findViewById(R.id.tv_duration);
         progressBar = rootView.findViewById(R.id.seek_bar);
+        imgLoading = rootView.findViewById(R.id.image_loading);
 
         mediaPlayerManager = MediaPlayerManager.getInstance();
 
@@ -87,23 +91,41 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
     }
 
     @Override
+    public void onPreparedListener() {
+        setBtnPlayDisplay(false);
+        setProgressBarEnable(true);
+        isPreparing = false;
+        dismissLoading();
+    }
+
+    boolean isPreparing;
+
+    @Override
     public void onClick(View v) {
+
+        if(isPreparing){
+            return ;
+        }
         /*
         1.未播放
             调用play、展示暂停按钮
         2.进行中
             调用paused、展示播放按钮
+        3.等待中
+            不处理
          */
         if(isPaused){
             isPaused = false;
             if(mediaPlayerManager.isComplete(getKey())){
+                isPreparing = true;
+                showLoading();
                 mediaPlayerManager.releaseLastPlayer(getKey());
                 mediaPlayerManager.play(getContext(),dataUri,getKey());
             }else{
                 mediaPlayerManager.start();
+                setBtnPlayDisplay(false);
+                setProgressBarEnable(true);
             }
-            setBtnPlayDisplay(false);
-            setProgressBarEnable(true);
         }else{
             setProgressBarEnable(false);
             isPaused = true;
@@ -157,7 +179,7 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
     }
 
     private void setBtnPlayDisplay(boolean isPaused){
-        btnPlay.setImageResource(isPaused?R.mipmap.icon_play_normal:R.mipmap.icon_pause_normal);
+        btnPlay.setImageResource(isPaused?R.mipmap.icon_audio_play_pause:R.mipmap.icon_audio_play_start);
     }
 
     public void initUI(){
@@ -167,6 +189,8 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
         setProgressBarEnable(false);
         progressBar.setSecondaryProgress(0);
         progressBar.setProgress(0);
+        btnPlay.setVisibility(View.VISIBLE);
+        imgLoading.setVisibility(View.GONE);
     }
 
     private void setProgressBarEnable(boolean enable){
@@ -188,10 +212,26 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
         if(mediaPlayerManager.getDataSource() == dataUri){
             mediaPlayerManager.releasePlayer();
         }
+        if(animationUtils!=null){
+            animationUtils.cancel();
+        }
     }
 
     private int getKey(){
         return KeyUtils.getHash(dataUri,this);
+    }
+
+    private void showLoading() {
+        btnPlay.setVisibility(View.GONE);
+        imgLoading.setVisibility(VISIBLE);
+        animationUtils = new AnimationUtils(imgLoading);
+        animationUtils.active(btnPlay.getWidth()/2,btnPlay.getHeight()/2);
+    }
+
+    private void dismissLoading(){
+        btnPlay.setVisibility(View.VISIBLE);
+        imgLoading.setVisibility(View.GONE);
+        animationUtils.cancel();
     }
 
 }

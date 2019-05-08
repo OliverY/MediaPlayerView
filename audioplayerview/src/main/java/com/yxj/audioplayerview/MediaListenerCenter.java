@@ -104,7 +104,6 @@ class MediaListenerCenter {
     }
 
     public void destroy(){
-//        listenerArray = null;
     }
 
 }

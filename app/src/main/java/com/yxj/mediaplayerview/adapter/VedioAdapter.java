@@ -46,11 +46,6 @@ public class VedioAdapter extends BaseMultiItemQuickAdapter<MultiItemEntity,Base
 
     private void renderText(BaseViewHolder helper, TextBean item) {
         helper.setText(R.id.text,item.getContent());
-    }
-
-    private void renderAudio(BaseViewHolder helper, AudioBean item) {
-        final MediaPlayerView mediaPlayerView = helper.getView(R.id.audio_view);
-        mediaPlayerView.setDataUri(item.getUrl());
 
         helper.getView(R.id.btn_pause).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -58,6 +53,12 @@ public class VedioAdapter extends BaseMultiItemQuickAdapter<MultiItemEntity,Base
                 mContext.startActivity(new Intent(mContext, VedioListActivity.class));
             }
         });
+    }
+
+    private void renderAudio(BaseViewHolder helper, AudioBean item) {
+        final MediaPlayerView mediaPlayerView = helper.getView(R.id.audio_view);
+        mediaPlayerView.setDataUri(item.getUrl());
+
     }
 
 }

@@ -1,10 +1,10 @@
 package com.yxj.mediaplayerview;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 
 import com.chad.library.adapter.base.entity.MultiItemEntity;
 import com.yxj.audioplayerview.MediaPlayerManager;
@@ -12,22 +12,22 @@ import com.yxj.mediaplayerview.adapter.VedioAdapter;
 import com.yxj.mediaplayerview.bean.AudioBean;
 import com.yxj.mediaplayerview.bean.TextBean;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
-
-    private VedioAdapter adapter;
+/**
+ * Author:  Yxj
+ * Time:    2019/5/8 上午9:44
+ * -----------------------------------------
+ * Description:
+ */
+public class VedioListActivity extends AppCompatActivity {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-//        EventBus.getDefault().register(this);
+        setContentView(R.layout.activity_list);
 
         makeList();
     }
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         vedioList.add(new TextBean("11"));
         vedioList.add(new TextBean("12"));
 
-        adapter = new VedioAdapter(vedioList);
+        VedioAdapter adapter = new VedioAdapter(vedioList);
         recyclerView.setAdapter(adapter);
     }
 
@@ -63,12 +63,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         MediaPlayerManager.getInstance().releaseLastPlayer();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        MediaPlayerManager.getInstance().destroy();
     }
 
 }

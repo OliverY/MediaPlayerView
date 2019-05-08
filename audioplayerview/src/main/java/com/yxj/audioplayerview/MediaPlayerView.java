@@ -13,6 +13,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.yxj.audioplayerview.listener.Listener;
+import com.yxj.audioplayerview.util.KeyUtils;
 
 
 /**
@@ -95,9 +96,9 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
          */
         if(isPaused){
             isPaused = false;
-            if(mediaPlayerManager.isComplete(dataUri)){
-                mediaPlayerManager.releaseLastPlayer(dataUri);
-                mediaPlayerManager.play(getContext(),dataUri);
+            if(mediaPlayerManager.isComplete(getKey())){
+                mediaPlayerManager.releaseLastPlayer(getKey());
+                mediaPlayerManager.play(getContext(),dataUri,getKey());
             }else{
                 mediaPlayerManager.start();
             }
@@ -175,18 +176,22 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        mediaPlayerManager.setListener(dataUri,this);
+        mediaPlayerManager.setListener(KeyUtils.getHash(dataUri,this),this);
         initUI();
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        mediaPlayerManager.removeListener(dataUri);
+        mediaPlayerManager.removeListener(KeyUtils.getHash(dataUri,this));
         // 当前控件正在播放，需要release
         if(mediaPlayerManager.getDataSource() == dataUri){
             mediaPlayerManager.releasePlayer();
         }
+    }
+
+    private int getKey(){
+        return KeyUtils.getHash(dataUri,this);
     }
 
 }

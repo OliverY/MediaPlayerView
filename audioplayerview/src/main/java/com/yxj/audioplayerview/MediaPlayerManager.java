@@ -27,7 +27,10 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     private Handler handler;
     private Timer timer;
     private Audio audio;
-    private Uri lastSource;
+
+    private int lastHash;
+//    private int currentHash;
+//    private Uri lastSource;
     private Uri dataSource;
 
     private static MediaPlayerManager mInstance;
@@ -53,16 +56,17 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         }
     }
 
-    public void play(Context context, Uri dataSource) {
+    public void play(Context context, Uri dataSource,int currentHash) {
         // 停止上一个
-        if(lastSource != null){
+        if(lastHash != 0){
             // 上一个和自己
-            if(lastSource != dataSource){
-                MediaEventCenter.getInstance().sendReleaseEvent(getHash(lastSource));
+            if(lastHash != currentHash){
+                MediaListenerCenter.getInstance().sendReleaseEvent(lastHash);
             }
         }
         this.dataSource = dataSource;
-        lastSource = dataSource;
+        lastHash = currentHash;
+//        lastSource = dataSource;
 
         hasPrepared = false; // 开始播放前讲Flag置为不可操作
         initIfNecessary(); // 如果是第一次播放/player已经释放了，就会重新创建、初始化
@@ -115,11 +119,16 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
      * view 开始播放时
      *
      */
-    public void releaseLastPlayer(Uri currentDataSource) {
+    public void releaseLastPlayer(int currentHash) {
         // 如果当前播放不是上一个，则release掉
-        if(getHash(currentDataSource) != getHash(lastSource)){
-            MediaEventCenter.getInstance().sendReleaseEvent(getHash(lastSource));
+        if(currentHash != lastHash){
+            MediaListenerCenter.getInstance().sendReleaseEvent(lastHash);
         }
+        releasePlayer();
+    }
+
+    public void releaseLastPlayer(){
+        MediaListenerCenter.getInstance().sendReleaseEvent(lastHash);
         releasePlayer();
     }
 
@@ -141,8 +150,8 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     public void onPrepared(MediaPlayer mp) {
         hasPrepared = true; // 准备完成后回调到这里
 
-        if(urlCurrentPositionMap.get(getHash(dataSource))!=null){
-            audio = urlCurrentPositionMap.get(getHash(dataSource));
+        if(urlCurrentPositionMap.get(lastHash)!=null){
+            audio = urlCurrentPositionMap.get(lastHash);
             if(audio.duration - audio.currentPosition<=1){
                 audio.currentPosition = 0;
             }
@@ -152,7 +161,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         handler.post(new Runnable() {
             @Override
             public void run() {
-                MediaEventCenter.getInstance().sendDurationUpdateEvent(getHash(dataSource),getDuration());
+                MediaListenerCenter.getInstance().sendDurationUpdateEvent(lastHash,getDuration());
                 start();
             }
         });
@@ -165,7 +174,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
 
         stopScheduler();
         // 修改UI
-        MediaEventCenter.getInstance().sendonCompleteEvent(getHash(dataSource));
+        MediaListenerCenter.getInstance().sendonCompleteEvent(lastHash);
     }
 
     @Override
@@ -178,7 +187,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     // 缓存进度
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
-        MediaEventCenter.getInstance().sendBufferingUpdateEvent(getHash(dataSource),percent);
+        MediaListenerCenter.getInstance().sendBufferingUpdateEvent(lastHash,percent);
     }
 
     /**
@@ -191,8 +200,10 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     }
 
     private int getCurrentPosition(){
-        int current = mPlayer.getCurrentPosition()/1000;
-        return current;
+        if(mPlayer!=null){
+            return mPlayer.getCurrentPosition()/1000;
+        }
+        return 0;
     }
 
     class TimeAndProgressTask extends TimerTask {
@@ -203,16 +214,18 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        int seconds = getCurrentPosition();
-                        MediaEventCenter.getInstance().sendTimeProgressEvent(getHash(dataSource),seconds);
+                        if(hasPrepared){
+                            int seconds = getCurrentPosition();
+                            MediaListenerCenter.getInstance().sendTimeProgressEvent(lastHash,seconds);
+                        }
                     }
                 });
             }
         }
     }
 
-    public boolean isComplete(Uri uri){
-        if(getHash(uri) != getHash(lastSource)){
+    public boolean isComplete(int currentHash){
+        if(currentHash != lastHash){
             return true;
         }
         return !hasPrepared;
@@ -222,12 +235,12 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
      * 设置缓冲条监听
      * @param listener
      */
-    public void setListener(Uri uri,Listener listener) {
-        MediaEventCenter.getInstance().addListener(uri.hashCode(),listener);
+    public void setListener(int hashKey,Listener listener) {
+        MediaListenerCenter.getInstance().addListener(hashKey,listener);
     }
 
-    public void removeListener(Uri uri){
-        MediaEventCenter.getInstance().removeListener(uri.hashCode());
+    public void removeListener(int hashKey){
+        MediaListenerCenter.getInstance().removeListener(hashKey);
     }
 
     /**
@@ -238,11 +251,13 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
             audio = new Audio(0,getDuration());
         }
         audio.currentPosition = getCurrentPosition();
-        urlCurrentPositionMap.put(getHash(dataSource),audio);
+        urlCurrentPositionMap.put(lastHash,audio);
+//        urlCurrentPositionMap.put(getHash(dataSource),audio);
     }
 
     private void removeAudioPosition(){
-        urlCurrentPositionMap.remove(getHash(dataSource));
+        urlCurrentPositionMap.remove(lastHash);
+//        urlCurrentPositionMap.remove(getHash(dataSource));
     }
 
     private void startScheduler(){
@@ -282,7 +297,8 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
      */
     public void destroy(){
         releasePlayer();
-        MediaEventCenter.getInstance().destroy();
+        MediaListenerCenter.getInstance().destroy();
         mInstance = null;
     }
+
 }

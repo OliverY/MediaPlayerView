@@ -12,21 +12,21 @@ import java.lang.ref.WeakReference;
  * -----------------------------------------
  * Description: 事件中心，本质上是一个一个监听View的集合，所以用弱引用
  */
-class MediaEventCenter {
+class MediaListenerCenter {
 
     SparseArray<WeakReference<Listener>> listenerArray;
 
-    private MediaEventCenter(){
+    private MediaListenerCenter(){
         listenerArray = new SparseArray<>();
     }
 
-    private static MediaEventCenter mInstance;
+    private static MediaListenerCenter mInstance;
 
-    public static MediaEventCenter getInstance(){
+    public static MediaListenerCenter getInstance(){
         if(mInstance == null){
-            synchronized (MediaEventCenter.class){
+            synchronized (MediaListenerCenter.class){
                 if(mInstance == null){
-                    mInstance = new MediaEventCenter();
+                    mInstance = new MediaListenerCenter();
                 }
             }
         }
@@ -34,13 +34,13 @@ class MediaEventCenter {
     }
 
     // 数据订阅者的注册
-    public void addListener(int viewHash,Listener listener){
-        listenerArray.put(viewHash,new WeakReference<Listener>(listener));
+    public void addListener(int viewAndUriHash,Listener listener){
+        listenerArray.put(viewAndUriHash,new WeakReference<Listener>(listener));
     }
 
     // 数据订阅者的注销
-    public void removeListener(int uriHash){
-        listenerArray.remove(uriHash);
+    public void removeListener(int viewAndUriHash){
+        listenerArray.remove(viewAndUriHash);
     }
 
     public void sendTimeProgressEvent(int uriHash,int seconds){
@@ -94,7 +94,7 @@ class MediaEventCenter {
     }
 
     public void destroy(){
-        listenerArray = null;
+//        listenerArray = null;
     }
 
 }

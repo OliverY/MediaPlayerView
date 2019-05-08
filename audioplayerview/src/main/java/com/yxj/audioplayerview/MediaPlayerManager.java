@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
+import android.util.Log;
 import android.util.SparseArray;
 
 import com.yxj.audioplayerview.listener.Listener;
@@ -29,7 +30,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     private Audio audio;
 
     private int lastHash;
-    private Uri dataSource;
+//    private Uri dataSource;
 
     private static MediaPlayerManager mInstance;
     private MediaPlayerManager(){
@@ -62,7 +63,6 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
                 MediaListenerCenter.getInstance().sendReleaseEvent(lastHash);
             }
         }
-        this.dataSource = dataSource;
         lastHash = currentHash;
 
         hasPrepared = false; // 开始播放前讲Flag置为不可操作
@@ -246,17 +246,14 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
      * 存储当前的播放位置
      */
     private void storeCurrentPosition(){
-        if(audio == null){
-            audio = new Audio(0,getDuration());
-        }
+        audio = new Audio();
+        audio.duration = getDuration();
         audio.currentPosition = getCurrentPosition();
         urlCurrentPositionMap.put(lastHash,audio);
-//        urlCurrentPositionMap.put(getHash(dataSource),audio);
     }
 
     private void removeAudioPosition(){
         urlCurrentPositionMap.remove(lastHash);
-//        urlCurrentPositionMap.remove(getHash(dataSource));
     }
 
     private void startScheduler(){
@@ -274,9 +271,15 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         int currentPosition;
         int duration;
 
-        public Audio(int currentPosition, int duration) {
-            this.currentPosition = currentPosition;
-            this.duration = duration;
+        public Audio() {
+        }
+
+        @Override
+        public String toString() {
+            return "Audio{" +
+                    "currentPosition=" + currentPosition +
+                    ", duration=" + duration +
+                    '}';
         }
     }
 
@@ -287,8 +290,8 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         return object.hashCode();
     }
 
-    public Uri getDataSource() {
-        return dataSource;
+    public int getHashKey() {
+        return lastHash;
     }
 
     /**

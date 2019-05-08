@@ -207,9 +207,9 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        mediaPlayerManager.removeListener(KeyUtils.getHash(dataUri,this));
+        mediaPlayerManager.removeListener(getKey());
         // 当前控件正在播放，需要release
-        if(mediaPlayerManager.getDataSource() == dataUri){
+        if(mediaPlayerManager.getHashKey() == getKey()){
             mediaPlayerManager.releasePlayer();
         }
         if(animationUtils!=null){

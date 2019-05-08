@@ -4,7 +4,7 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
-import android.util.ArrayMap;
+import android.util.SparseArray;
 
 import com.yxj.audioplayerview.listener.Listener;
 
@@ -20,7 +20,7 @@ import java.util.TimerTask;
  */
 public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener,MediaPlayer.OnBufferingUpdateListener {
 
-    private static ArrayMap<Uri,Audio> urlCurrentPositionMap = new ArrayMap<>();
+    private static SparseArray<Audio> urlCurrentPositionMap = new SparseArray<>();
 
     private MediaPlayer mPlayer;
     private boolean hasPrepared;
@@ -90,7 +90,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         if (null != mPlayer && hasPrepared) {
             stopScheduler();
             mPlayer.pause();
-            storeCurrentPosition(audio);
+            storeCurrentPosition();
         }
     }
 
@@ -129,7 +129,7 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     public void releasePlayer(){
         hasPrepared = false;
         if(mPlayer!=null){
-            storeCurrentPosition(audio);
+            storeCurrentPosition();
             mPlayer.release();
             mPlayer = null;
         }
@@ -141,14 +141,14 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     public void onPrepared(MediaPlayer mp) {
         hasPrepared = true; // 准备完成后回调到这里
 
-        if(urlCurrentPositionMap.get(dataSource)!=null){
-            audio = urlCurrentPositionMap.get(dataSource);
-        }else{
-            audio = new Audio(0,getDuration());
-            storeCurrentPosition(audio);
+        if(urlCurrentPositionMap.get(getHash(dataSource))!=null){
+            audio = urlCurrentPositionMap.get(getHash(dataSource));
+            if(audio.duration - audio.currentPosition<=1){
+                audio.currentPosition = 0;
+            }
+            innerSeekTo(audio.currentPosition);
         }
 
-        innerSeekTo(audio.currentPosition);
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -161,17 +161,15 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
     @Override
     public void onCompletion(MediaPlayer mp) {
         hasPrepared = false;
-        audio.currentPosition = 0;
-        storeCurrentPosition(audio);
+        removeAudioPosition();
 
         stopScheduler();
-        // 通知调用处，调用play()方法进行下一个曲目的播放
+        // 修改UI
         MediaEventCenter.getInstance().sendonCompleteEvent(getHash(dataSource));
     }
 
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
-//        Log.e("error","error:what"+what+" extra:"+extra);
         hasPrepared = false;
         stopScheduler();
         return false;
@@ -188,11 +186,13 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
      * @return
      */
     private int getDuration(){
-        return mPlayer.getDuration()/1000;
+        int duration = mPlayer.getDuration()/1000;
+        return duration;
     }
 
     private int getCurrentPosition(){
-        return mPlayer.getCurrentPosition()/1000+1;
+        int current = mPlayer.getCurrentPosition()/1000;
+        return current;
     }
 
     class TimeAndProgressTask extends TimerTask {
@@ -230,19 +230,24 @@ public class MediaPlayerManager implements MediaPlayer.OnPreparedListener, Media
         MediaEventCenter.getInstance().removeListener(uri.hashCode());
     }
 
-    private void storeCurrentPosition(Audio audio){
-        if(audio != null){
-            audio.currentPosition = getCurrentPosition();
-            if(audio.currentPosition == audio.duration){
-                audio.currentPosition = 0;
-            }
-            urlCurrentPositionMap.put(dataSource,audio);
+    /**
+     * 存储当前的播放位置
+     */
+    private void storeCurrentPosition(){
+        if(audio == null){
+            audio = new Audio(0,getDuration());
         }
+        audio.currentPosition = getCurrentPosition();
+        urlCurrentPositionMap.put(getHash(dataSource),audio);
+    }
+
+    private void removeAudioPosition(){
+        urlCurrentPositionMap.remove(getHash(dataSource));
     }
 
     private void startScheduler(){
         timer = new Timer();
-        timer.schedule(new TimeAndProgressTask(),0,300);
+        timer.schedule(new TimeAndProgressTask(),0,500);
     }
 
     private void stopScheduler(){

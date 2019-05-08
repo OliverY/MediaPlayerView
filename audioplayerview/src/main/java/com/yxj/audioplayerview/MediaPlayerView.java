@@ -170,6 +170,7 @@ public class MediaPlayerView extends FrameLayout implements View.OnClickListener
         setProgressBarEnable(false);
         progressBar.setSecondaryProgress(0);
         progressBar.setProgress(0);
+        dismissLoading();
     }
 
     // BufferingUpdateListener
